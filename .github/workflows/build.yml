@@ -1,0 +1,60 @@
+name: "Build PKGBUILDS"
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  generate-matrix:
+    runs-on: ubuntu-24.04
+    outputs:
+      pkgs: ${{ steps.pkgs.outputs.pkgs }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      with:
+        submodules: "recursive"
+
+    - name: Install Just
+      uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+
+    - name: List packages
+      id: pkgs
+      run: |
+        echo pkgs="$(just pkgs-json)" >> "$GITHUB_OUTPUT"
+
+  build-packages:
+    needs: generate-matrix
+    runs-on: ubuntu-24.04
+    container:
+      image: archlinux:base-devel
+      options: --privileged
+
+    strategy:
+      matrix:
+        pkg: ${{ fromJSON(needs.generate-matrix.outputs.pkgs) }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      with:
+        submodules: "recursive"
+
+    - name: Create builder user
+      run: |
+        mkdir -p /etc/sudoers.d
+        cat >/etc/sudoers.d/builder <<EOF
+        builder ALL=(ALL:ALL) NOPASSWD: ALL
+        EOF
+        useradd -Um builder
+        cp -vr * /home/builder
+
+    - name: Install dependencies
+      run: |
+        pacman -Syu --noconfirm just sudo git
+
+    - name: Build
+      run: |
+        cd /home/builder
+        su builder -c "just build-pkg ${{ matrix.pkg }}"
+        ls ${{ matrix.pkg }} -la
