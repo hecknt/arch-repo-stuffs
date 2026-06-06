@@ -14,4 +14,4 @@ build-pkg pkg *ARGS:
     set -uxeo pipefail
 
     cd {{pkg}}
-    echo makepkg --syncdeps --clean {{ARGS}}
+    makepkg --syncdeps --clean {{ARGS}}
