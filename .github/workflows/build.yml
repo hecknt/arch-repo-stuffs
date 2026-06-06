@@ -52,6 +52,7 @@ jobs:
         EOF
         useradd -Um builder
         cp -vr * /home/builder
+        chown -R builder:builder /home/builder
 
     - name: Build
       run: |
