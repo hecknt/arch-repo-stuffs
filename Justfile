@@ -7,7 +7,7 @@ pkgs-json:
         pkgs+=("$f")
     done
 
-    jq -n '$ARGS.positional' --args "${pkgs[@]}"
+    jq -n '$ARGS.positional' -r -c -M --args "${pkgs[@]}"
 
 build-pkg pkg:
     #!/usr/bin/env bash
