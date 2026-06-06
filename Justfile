@@ -11,7 +11,7 @@ pkgs-json:
 
 build-pkg pkg *ARGS:
     #!/usr/bin/env bash
-    set -uxeo pipefail
+    set -xeo pipefail
 
     if [ -z "${MAKEFLAGS}" ]; then
         export MAKEFLAGS=j$(nproc)
