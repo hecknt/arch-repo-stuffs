@@ -9,8 +9,9 @@ pkgs-json:
 
     jq -n '$ARGS.positional' -r -c -M --args "${pkgs[@]}"
 
-build-pkg pkg:
+build-pkg pkg *ARGS:
     #!/usr/bin/env bash
+    set -uxeo pipefail
 
     cd {{pkg}}
-    makepkg -sc
+    echo makepkg --syncdeps --clean {{ARGS}}

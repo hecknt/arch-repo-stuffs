@@ -57,5 +57,5 @@ jobs:
     - name: Build
       run: |
         cd /home/builder
-        su builder -c "just build-pkg ${{ matrix.pkg }}"
+        su builder -c "just build-pkg ${{ matrix.pkg }} --noconfirm"
         ls ${{ matrix.pkg }} -la
