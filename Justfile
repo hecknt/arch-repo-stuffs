@@ -13,5 +13,9 @@ build-pkg pkg *ARGS:
     #!/usr/bin/env bash
     set -uxeo pipefail
 
+    if [ -z "${MAKEFLAGS}" ]; then
+        export MAKEFLAGS=j$(nproc)
+    fi
+
     cd {{pkg}}
     makepkg --syncdeps --clean {{ARGS}}

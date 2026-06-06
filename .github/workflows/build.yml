@@ -54,6 +54,11 @@ jobs:
         cp -vr * /home/builder
         chown -R builder:builder /home/builder
 
+    - name: Configure makepkg
+      run: |
+        # disable debug packages
+        sed -i '/^#/! s/ debug / !debug /g' /etc/makepkg.conf
+
     - name: Build
       run: |
         cd /home/builder
