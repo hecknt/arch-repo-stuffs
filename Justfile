@@ -17,5 +17,5 @@ build-pkg pkg *ARGS:
         export MAKEFLAGS=j$(nproc)
     fi
 
-    cd {{pkg}}
+    cd pkgs/{{pkg}}
     makepkg --syncdeps --clean {{ARGS}}
