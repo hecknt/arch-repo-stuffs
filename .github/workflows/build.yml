@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       pkgs: ${{ steps.pkgs.outputs.pkgs }}
+      exists: ${{ steps.check_release.outputs.exists }}
     steps:
     - name: Checkout
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -17,6 +18,17 @@ jobs:
 
     - name: Install Just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+
+    - name: Check if release exists
+      id: check_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        if gh release view hecknt-repo > /dev/null 2>/dev/null; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
 
     - name: List packages
       id: pkgs
@@ -59,8 +71,51 @@ jobs:
         # disable debug packages
         sed -i '/^#/! s/ debug / !debug /g' /etc/makepkg.conf
 
-    - name: Build
+    - name: Build ${{ matrix.pkg }}
       run: |
         cd /home/builder
         su builder -c "just build-pkg ${{ matrix.pkg }} --noconfirm"
-        ls ${{ matrix.pkg }} -la
+        ls pkgs/${{ matrix.pkg }} -la
+
+    - name: Upload package artifact
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: pkgs-${{ matrix.pkg }}
+        retention-days: 1
+        if-no-files-found: error
+        path: |
+          /home/builder/pkgs/${{ matrix.pkg}}/*.pkg.tar.zst
+
+  create-and-publish-repo:
+    needs: [ generate-matrix, build-packages ]
+    runs-on: ubuntu-24.04
+    container:
+      image: archlinux:base-devel
+      options: --privileged
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+    - name: Install dependencies
+      run: |
+        pacman -Syu --noconfirm just sudo git github-cli
+
+    - name: Checkout
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      with:
+        submodules: "recursive"
+
+    - name: Download existing release
+      if: ${{ needs.generate-matrix.outputs.exists == 'true' }}
+      run: |
+        gh release download hecknt-repo -p '*.pkg.tar.zst'
+
+    - name: Fetch build outputs
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v7.0.1
+      with:
+        pattern: pkgs-*
+
+    - name: fart
+      run: |
+        ls -la
