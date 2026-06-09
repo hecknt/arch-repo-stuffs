@@ -106,6 +106,10 @@ jobs:
       with:
         submodules: "recursive"
 
+    - name: Create repo directory
+      run: |
+        mkdir repo
+
     - name: Download existing release
       if: ${{ needs.generate-matrix.outputs.exists == 'true' }}
       run: |
@@ -116,6 +120,7 @@ jobs:
       with:
         pattern: pkgs-*
         merge-multiple: true
+        path: repo
 
     - name: fart
       run: |
